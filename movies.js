@@ -21,6 +21,7 @@ window.addEventListener('DOMContentLoaded', async function(event) {
     let response = await fetch('https://api.themoviedb.org/3/movie/now_playing?api_key=c7ad6f6cf7e93c1e35ff95693e0fdd3f&language=en-US')
     let json = await response.json()
     let movies = json.results
+    let db = firebase.firestore()
     console.log(movies)
     
     // ⬆️ ⬆️ ⬆️ 
@@ -52,6 +53,10 @@ window.addEventListener('DOMContentLoaded', async function(event) {
 
     for (let i = 0; i < movies.length; i++){
         result.insertAdjacentHTML('beforeend',renderMovie(movies[i]))
+        let movie = await db.collection('watched').doc(`${movies[i].id}`).get()
+        if(movie.data()){
+            document.querySelector(`.movie-${movies[i].id}`).classList.add('opacity-20')
+        }
     }
 
     // ⬆️ ⬆️ ⬆️ 
@@ -70,12 +75,17 @@ window.addEventListener('DOMContentLoaded', async function(event) {
     // ⬇️ ⬇️ ⬇️
 
     let button
-    let movie
     for (let n = 0; n < movies.length; n++){
         button = document.querySelector(`.watched-button-${movies[n].id}`)
-        button.addEventListener('click', function(event){
+        button.addEventListener('click', async function(event){
             event.preventDefault()
-            document.querySelector(`.movie-${movies[n].id}`).classList.add('opacity-20')
+            if (document.querySelector(`.movie-${movies[n].id}`).classList.contains('opacity-20')){
+                document.querySelector(`.movie-${movies[n].id}`).classList.remove('opacity-20')
+                await db.collection('watched').doc(`${movies[n].id}`).delete()
+            } else {
+                document.querySelector(`.movie-${movies[n].id}`).classList.add('opacity-20')
+                await db.collection('watched').doc(`${movies[n].id}`).set({})
+            }
         })
     }
 
